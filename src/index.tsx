@@ -12,7 +12,8 @@ import {
   // routerHook
 } from "@decky/api"
 import { useState, useEffect } from "react";
-import { FaShip, FaSteam, FaGamepad, FaClock } from 'react-icons/fa';
+import { FaShip, FaSteam, FaClock } from 'react-icons/fa';
+import { PanelSection, PanelSectionRow, DialogButton, Focusable, Field } from '@decky/ui';
 import useHltb from './hooks/useHltb';
 
 // This function calls the python function to get the Steam library
@@ -89,12 +90,6 @@ function GameList() {
     );
   }
 
-  const formatPlaytime = (minutes: number | undefined) => {
-    if (!minutes) return 'No playtime';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
 
   if (error) {
     return (
@@ -106,42 +101,78 @@ function GameList() {
     );
   }
 
+  const formatPlaytime = (minutes: number | undefined) => {
+    if (!minutes) return 'No playtime';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <>
-      <PanelSectionRow>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          <FaSteam size={24} />
-          <h2>Your Steam Library</h2>
-        </div>
-      </PanelSectionRow>
-      <div style={{ maxHeight: '500px', overflowY: 'auto', padding: '0 10px' }}>
+      <PanelSection title="Your Steam Library" icon={<FaSteam />}>
         {games.map((game) => (
           <PanelSectionRow key={game.appid}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '8px 0',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <FaGamepad size={20} />
-              <span style={{ flex: 1 }}>{game.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <GameHltbTime appId={parseInt(game.appid)} appName={game.name} />
-                <span style={{
-                  fontSize: '0.8em',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  padding: '2px 6px',
-                  borderRadius: '4px'
-                }}>
-                  {game.appid}
-                </span>
-              </div>
-            </div>
+            <Field
+              bottomSeparator="none"
+              icon={null}
+              label={null}
+              childrenLayout={undefined}
+              inlineWrap="keep-inline"
+              padding="none"
+              spacingBetweenLabelAndChild="none"
+              childrenContainerWidth="max"
+            >
+              <Focusable style={{ display: 'flex', width: '100%' }}>
+                <DialogButton
+                  onClick={() => {
+                    // Handle game selection here
+                    console.log('Selected game:', game.name);
+                  }}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px',
+                    textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  <span style={{ 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {game.name}
+                  </span>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginLeft: '8px',
+                    flexShrink: 0
+                  }}>
+                    <span style={{
+                      fontSize: '0.9em',
+                      color: 'rgba(255, 255, 255, 0.8)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {formatPlaytime(game.playtime_forever)}
+                    </span>
+                    <GameHltbTime appId={parseInt(game.appid)} appName={game.name} />
+                  </div>
+                </DialogButton>
+              </Focusable>
+            </Field>
           </PanelSectionRow>
         ))}
-      </div>
+      </PanelSection>
     </>
   );
 }
