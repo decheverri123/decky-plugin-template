@@ -12,8 +12,8 @@ import {
   // routerHook
 } from "@decky/api"
 import { useState, useEffect } from "react";
-import { FaShip, FaSteam, FaClock } from 'react-icons/fa';
-import { PanelSection, PanelSectionRow, DialogButton, Focusable, Field } from '@decky/ui';
+import { FaShip, FaSteam, FaClock, FaExternalLinkAlt } from 'react-icons/fa';
+import { PanelSection, PanelSectionRow, DialogButton, Focusable, Field, Navigation } from '@decky/ui';
 import useHltb from './hooks/useHltb';
 
 // This function calls the python function to get the Steam library
@@ -51,9 +51,148 @@ const GameHltbTime = ({ appId, appName }: { appId: number, appName: string }) =>
   );
 };
 
+const GameWithHltb = ({ game }: { game: Game }) => {
+  const hltbData = useHltb(parseInt(game.appid), game.name, true);
+  const [showDetails, setShowDetails] = useState(false);
+  
+  // Only show the component if we have stats to display
+  const hasStats = hltbData?.showStats && (
+    hltbData.mainStat !== '--' || 
+    hltbData.mainPlusStat !== '--' || 
+    hltbData.completeStat !== '--' || 
+    hltbData.allStylesStat !== '--'
+  );
+
+  if (!hasStats) return null;
+  
+  const viewOnHltb = () => {
+    if (hltbData?.gameId) {
+      Navigation.NavigateToExternalWeb(
+        `https://howlongtobeat.com/game/${hltbData.gameId}`
+      );
+    }
+  };
+
+  return (
+    <PanelSectionRow>
+      <div style={{ width: '100%' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: showDetails ? '10px' : 0,
+          width: '100%'
+        }}>
+          <span style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.95em',
+            fontWeight: 'bold'
+          }}>
+            {game.name}
+          </span>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {hltbData.mainStat !== '--' && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.85em',
+                color: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                whiteSpace: 'nowrap'
+              }}>
+                <FaClock size={12} />
+                <span>{hltbData.mainStat}</span>
+              </div>
+            )}
+            
+            <DialogButton 
+              onClick={() => setShowDetails(!showDetails)}
+              style={{
+                padding: '4px 8px',
+                minWidth: '32px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {showDetails ? '−' : '+'}
+            </DialogButton>
+          </div>
+        </div>
+        
+        {showDetails && (
+          <div style={{
+            marginTop: '8px',
+            padding: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            borderRadius: '4px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            {hltbData.mainStat !== '--' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Main Story:</span>
+                <span>{hltbData.mainStat}</span>
+              </div>
+            )}
+            
+            {hltbData.mainPlusStat !== '--' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Main + Extras:</span>
+                <span>{hltbData.mainPlusStat}</span>
+              </div>
+            )}
+            
+            {hltbData.completeStat !== '--' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Completionist:</span>
+                <span>{hltbData.completeStat}</span>
+              </div>
+            )}
+            
+            {hltbData.allStylesStat !== '--' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>All Styles:</span>
+                <span>{hltbData.allStylesStat}</span>
+              </div>
+            )}
+            
+            {hltbData.gameId && (
+              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                <DialogButton 
+                  onClick={viewOnHltb}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.85em',
+                    padding: '4px 8px',
+                    height: 'auto'
+                  }}
+                >
+                  <span>View on HLTB</span>
+                  <FaExternalLinkAlt size={12} />
+                </DialogButton>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </PanelSectionRow>
+  );
+};
+
 function GameList() {
   const [games, setGames] = useState<Game[]>([]);
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,67 +249,13 @@ function GameList() {
 
   return (
     <>
-      <PanelSection title="Your Steam Library" icon={<FaSteam />}>
+      <PanelSection title="Your Steam Library">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <FaSteam size={24} />
+          <h2>Your Steam Library</h2>
+        </div>
         {games.map((game) => (
-          <PanelSectionRow key={game.appid}>
-            <Field
-              bottomSeparator="none"
-              icon={null}
-              label={null}
-              childrenLayout={undefined}
-              inlineWrap="keep-inline"
-              padding="none"
-              spacingBetweenLabelAndChild="none"
-              childrenContainerWidth="max"
-            >
-              <Focusable style={{ display: 'flex', width: '100%' }}>
-                <DialogButton
-                  onClick={() => {
-                    // Handle game selection here
-                    console.log('Selected game:', game.name);
-                  }}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px',
-                    textAlign: 'left',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  <span style={{ 
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {game.name}
-                  </span>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginLeft: '8px',
-                    flexShrink: 0
-                  }}>
-                    <span style={{
-                      fontSize: '0.9em',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {formatPlaytime(game.playtime_forever)}
-                    </span>
-                    <GameHltbTime appId={parseInt(game.appid)} appName={game.name} />
-                  </div>
-                </DialogButton>
-              </Focusable>
-            </Field>
-          </PanelSectionRow>
+          <GameWithHltb key={game.appid} game={game} />
         ))}
       </PanelSection>
     </>
