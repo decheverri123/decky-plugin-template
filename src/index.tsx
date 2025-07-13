@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { FaShip, FaSteam, FaClock, FaExternalLinkAlt } from 'react-icons/fa';
 import { PanelSection, PanelSectionRow, DialogButton, Focusable, Field, Navigation } from '@decky/ui';
 import useHltb from './hooks/useHltb';
+import GameList from './components/GameList';
 
 // This function calls the python function to get the Steam library
 const getSteamLibrary = callable<[], Array<{appid: string, name: string, library_path: string}>>("get_steam_library");
@@ -65,13 +66,7 @@ const GameWithHltb = ({ game }: { game: Game }) => {
 
   if (!hasStats) return null;
   
-  const viewOnHltb = () => {
-    if (hltbData?.gameId) {
-      Navigation.NavigateToExternalWeb(
-        `https://howlongtobeat.com/game/${hltbData.gameId}`
-      );
-    }
-  };
+ 
 
   return (
     <PanelSectionRow>
@@ -158,32 +153,6 @@ const GameWithHltb = ({ game }: { game: Game }) => {
                 <span>{hltbData.completeStat}</span>
               </div>
             )}
-            
-            {hltbData.allStylesStat !== '--' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>All Styles:</span>
-                <span>{hltbData.allStylesStat}</span>
-              </div>
-            )}
-            
-            {hltbData.gameId && (
-              <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
-                <DialogButton 
-                  onClick={viewOnHltb}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.85em',
-                    padding: '4px 8px',
-                    height: 'auto'
-                  }}
-                >
-                  <span>View on HLTB</span>
-                  <FaExternalLinkAlt size={12} />
-                </DialogButton>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -191,82 +160,12 @@ const GameWithHltb = ({ game }: { game: Game }) => {
   );
 };
 
-function GameList() {
-  const [games, setGames] = useState<Game[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadGames = async () => {
-      try {
-        const result = await getSteamLibrary();
-        if (result && result.length > 0) {
-          // Sort games alphabetically by name
-          const sortedGames = [...result].sort((a, b) => a.name.localeCompare(b.name));
-          setGames(sortedGames);
-        } else {
-          setError("No games found in your Steam library.");
-        }
-      } catch (err) {
-        console.error("Error loading Steam library:", err);
-        setError("Failed to load Steam library. Make sure Steam is running and you're logged in.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadGames();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <PanelSectionRow>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <FaSteam size={24} />
-          <span>Loading your Steam library...</span>
-        </div>
-      </PanelSectionRow>
-    );
-  }
-
-
-  if (error) {
-    return (
-      <PanelSectionRow>
-        <div style={{ color: 'red' }}>
-          <p>{error}</p>
-        </div>
-      </PanelSectionRow>
-    );
-  }
-
-  const formatPlaytime = (minutes: number | undefined) => {
-    if (!minutes) return 'No playtime';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  return (
-    <>
-      <PanelSection title="Your Steam Library">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          <FaSteam size={24} />
-          <h2>Your Steam Library</h2>
-        </div>
-        {games.map((game) => (
-          <GameWithHltb key={game.appid} game={game} />
-        ))}
-      </PanelSection>
-    </>
-  );
-}
 
 function Content() {
   return (
-    <PanelSection title="Steam Library">
+   
       <GameList />
-    </PanelSection>
+   
   );
 };
 
