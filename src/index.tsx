@@ -11,9 +11,9 @@ import {
   toaster,
   // routerHook
 } from "@decky/api"
-import { useState } from "react";
-import { FaShip, FaSteam, FaGamepad } from "react-icons/fa";
-import { useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { FaShip, FaSteam, FaGamepad, FaClock } from 'react-icons/fa';
+import useHltb from './hooks/useHltb';
 
 // This function calls the python function to get the Steam library
 const getSteamLibrary = callable<[], Array<{appid: string, name: string, library_path: string}>>("get_steam_library");
@@ -22,10 +22,37 @@ interface Game {
   appid: string;
   name: string;
   library_path: string;
+  playtime_forever?: number;
 }
+
+const GameHltbTime = ({ appId, appName }: { appId: number, appName: string }) => {
+  const hltbData = useHltb(appId, appName, true);
+  
+  if (!hltbData || !hltbData.showStats || hltbData.mainStat === '--') {
+    return null;
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '0.8em',
+      color: 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      padding: '2px 8px',
+      borderRadius: '4px',
+      whiteSpace: 'nowrap'
+    }}>
+      <FaClock size={12} />
+      <span>{hltbData.mainStat}</span>
+    </div>
+  );
+};
 
 function GameList() {
   const [games, setGames] = useState<Game[]>([]);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +89,13 @@ function GameList() {
     );
   }
 
+  const formatPlaytime = (minutes: number | undefined) => {
+    if (!minutes) return 'No playtime';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   if (error) {
     return (
       <PanelSectionRow>
@@ -92,15 +126,18 @@ function GameList() {
             }}>
               <FaGamepad size={20} />
               <span style={{ flex: 1 }}>{game.name}</span>
-              <span style={{
-                fontSize: '0.8em',
-                color: 'rgba(255, 255, 255, 0.6)',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                padding: '2px 6px',
-                borderRadius: '4px'
-              }}>
-                {game.appid}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <GameHltbTime appId={parseInt(game.appid)} appName={game.name} />
+                <span style={{
+                  fontSize: '0.8em',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  padding: '2px 6px',
+                  borderRadius: '4px'
+                }}>
+                  {game.appid}
+                </span>
+              </div>
             </div>
           </PanelSectionRow>
         ))}

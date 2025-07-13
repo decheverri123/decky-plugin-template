@@ -6,7 +6,35 @@ import {
     SearchResults,
 } from './GameInfoData';
 import { normalize } from '../utils';
-import { get } from 'fast-levenshtein';
+// Custom implementation of Levenshtein distance algorithm
+function getLevenshteinDistance(a: string, b: string): number {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix: number[][] = [];
+
+    // Initialize the matrix
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    // Fill in the matrix
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,     // Deletion
+                matrix[i][j - 1] + 1,     // Insertion
+                matrix[i - 1][j - 1] + cost // Substitution
+            );
+        }
+    }
+
+    return matrix[b.length][a.length];
+}
 
 // NOTE: Close reproduction of https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/pull/26
 const SearchKey = Symbol('Search Key');
@@ -326,9 +354,7 @@ async function fetchMostCompatibleGameData(
         const possibleChoices = searchResults.data
             .map((item) => {
                 return {
-                    minEditDistance: get(appName, item.game_name, {
-                        useCollator: true,
-                    }),
+                    minEditDistance: getLevenshteinDistance(appName, item.game_name),
                     item,
                 };
             })
