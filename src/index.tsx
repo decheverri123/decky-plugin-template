@@ -1,5 +1,4 @@
 import {
-  ButtonItem,
   PanelSection,
   PanelSectionRow,
   staticClasses
@@ -13,64 +12,107 @@ import {
   // routerHook
 } from "@decky/api"
 import { useState } from "react";
-import { FaShip } from "react-icons/fa";
+import { FaShip, FaSteam, FaGamepad } from "react-icons/fa";
+import { useEffect } from 'react';
 
-// import logo from "../assets/logo.png";
+// This function calls the python function to get the Steam library
+const getSteamLibrary = callable<[], Array<{appid: string, name: string, library_path: string}>>("get_steam_library");
 
-// This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
-// Note the type annotations:
-//  the first one: [first: number, second: number] is for the arguments
-//  the second one: number is for the return value
-const add = callable<[first: number, second: number], number>("add");
+interface Game {
+  appid: string;
+  name: string;
+  library_path: string;
+}
 
-// This function calls the python function "start_timer", which takes in no arguments and returns nothing.
-// It starts a (python) timer which eventually emits the event 'timer_event'
-const startTimer = callable<[], void>("start_timer");
+function GameList() {
+  const [games, setGames] = useState<Game[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  useEffect(() => {
+    const loadGames = async () => {
+      try {
+        const result = await getSteamLibrary();
+        if (result && result.length > 0) {
+          // Sort games alphabetically by name
+          const sortedGames = [...result].sort((a, b) => a.name.localeCompare(b.name));
+          setGames(sortedGames);
+        } else {
+          setError("No games found in your Steam library.");
+        }
+      } catch (err) {
+        console.error("Error loading Steam library:", err);
+        setError("Failed to load Steam library. Make sure Steam is running and you're logged in.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const onClick = async () => {
-    const result = await add(Math.random(), Math.random());
-    setResult(result);
-  };
+    loadGames();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <PanelSectionRow>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FaSteam size={24} />
+          <span>Loading your Steam library...</span>
+        </div>
+      </PanelSectionRow>
+    );
+  }
+
+  if (error) {
+    return (
+      <PanelSectionRow>
+        <div style={{ color: 'red' }}>
+          <p>{error}</p>
+        </div>
+      </PanelSectionRow>
+    );
+  }
 
   return (
-    <PanelSection title="Panel Section">
+    <>
       <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={onClick}
-        >
-          {result ?? "Add two numbers via Python"}
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => startTimer()}
-        >
-          {"Start Python timer"}
-        </ButtonItem>
-      </PanelSectionRow>
-
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <FaSteam size={24} />
+          <h2>Your Steam Library</h2>
         </div>
-      </PanelSectionRow> */}
+      </PanelSectionRow>
+      <div style={{ maxHeight: '500px', overflowY: 'auto', padding: '0 10px' }}>
+        {games.map((game) => (
+          <PanelSectionRow key={game.appid}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 0',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <FaGamepad size={20} />
+              <span style={{ flex: 1 }}>{game.name}</span>
+              <span style={{
+                fontSize: '0.8em',
+                color: 'rgba(255, 255, 255, 0.6)',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                padding: '2px 6px',
+                borderRadius: '4px'
+              }}>
+                {game.appid}
+              </span>
+            </div>
+          </PanelSectionRow>
+        ))}
+      </div>
+    </>
+  );
+}
 
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
+function Content() {
+  return (
+    <PanelSection title="Steam Library">
+      <GameList />
     </PanelSection>
   );
 };
@@ -97,7 +139,7 @@ export default definePlugin(() => {
 
   return {
     // The name shown in various decky menus
-    name: "Test Plugin",
+    name: "Steam Beat",
     // The element displayed at the top of your plugin's menu
     titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
     // The content of your plugin's menu

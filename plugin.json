@@ -1,6 +1,6 @@
 {
-  "name": "Example Plugin",
-  "author": "John Doe",
+  "name": "Steam Beat",
+  "author": "Danny Echeverri",
   "flags": ["debug", "_root"],
   "api_version": 1,
   "publish": {
